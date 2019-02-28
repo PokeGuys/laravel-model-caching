@@ -29,7 +29,7 @@ class CacheKey
         $idColumn = null,
         string $keyDifferentiator = ""
     ) : string {
-        $key = $this->getCachePrefix();
+        $key = $this->getCachePrefix($this->model->getConnection());
         $key .= $this->getTableSlug();
         $key .= $this->getModelSlug();
         $key .= $this->getIdColumn($idColumn ?: "");
@@ -128,7 +128,7 @@ class CacheKey
     protected function getValuesFromWhere(array $where) : string
     {
         if (array_get($where, "query")) {
-            $prefix = $this->getCachePrefix();
+            $prefix = $this->getCachePrefix($this->model->getConnection());
             $subKey = (new self($this->eagerLoad, $this->model, $where["query"]))
                 ->make();
             $subKey = str_replace($prefix, "", $subKey);

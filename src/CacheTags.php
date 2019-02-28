@@ -30,9 +30,10 @@ class CacheTags
             ->keys()
             ->map(function ($relationName) {
                 $relation = $this->getRelation($relationName);
+                $relationModel = $relation->getQuery()->getModel();
 
-                return $this->getCachePrefix()
-                    . str_slug(get_class($relation->getQuery()->getModel()));
+                return $this->getCachePrefix($relationModel->getConnection())
+                    . str_slug(get_class($relationModel));
             })
             ->prepend($this->getTagName())
             ->values()
@@ -63,6 +64,6 @@ class CacheTags
 
     protected function getTagName() : string
     {
-        return $this->getCachePrefix() . str_slug(get_class($this->model));
+        return $this->getCachePrefix($this->model->getConnection()) . str_slug(get_class($this->model));
     }
 }

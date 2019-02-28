@@ -2,23 +2,23 @@
 
 trait CachePrefixing
 {
-    protected function getCachePrefix() : string
+    protected function getCachePrefix($connection) : string
     {
         return "genealabs:laravel-model-caching:"
-            . $this->getDatabaseConnectionName() . ":"
-            . $this->getDatabaseName() . ":"
+            . $this->getDatabaseConnectionName($connection) . ":"
+            . $this->getDatabaseName($connection) . ":"
             . (config("laravel-model-caching.cache-prefix")
                 ? config("laravel-model-caching.cache-prefix", "") . ":"
                 : "");
     }
 
-    protected function getDatabaseConnectionName() : string
+    protected function getDatabaseConnectionName($connection) : string
     {
-        return $this->model->getConnection()->getName();
+        return $connection->getName();
     }
 
-    protected function getDatabaseName() : string
+    protected function getDatabaseName($connection) : string
     {
-        return $this->model->getConnection()->getDatabaseName();
+        return $connection->getDatabaseName();
     }
 }

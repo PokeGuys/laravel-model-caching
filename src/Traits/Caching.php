@@ -44,7 +44,7 @@ trait Caching
         [$cacheCooldown] = $this->getModelCacheCooldown($this);
 
         if ($cacheCooldown) {
-            $cachePrefix = $this->getCachePrefix();
+            $cachePrefix = $this->getCachePrefix($this->model->getConnection());
             $modelClassName = get_class($this);
             $cacheKey = "{$cachePrefix}:{$modelClassName}-cooldown:saved-at";
 
@@ -93,7 +93,7 @@ trait Caching
 
     public function getModelCacheCooldown(Model $instance) : array
     {
-        $cachePrefix = $this->getCachePrefix();
+        $cachePrefix = $this->getCachePrefix($instance->getConnection());
         $modelClassName = get_class($instance);
         [$cacheCooldown, $invalidatedAt, $savedAt] = $this
             ->getCacheCooldownDetails($instance, $cachePrefix, $modelClassName);
@@ -133,7 +133,7 @@ trait Caching
             return;
         }
 
-        $cachePrefix = $this->getCachePrefix();
+        $cachePrefix = $this->getCachePrefix($instance->getConnection());
         $modelClassName = get_class($instance);
 
         $instance
@@ -173,7 +173,7 @@ trait Caching
 
     protected function setCacheCooldownSavedAtTimestamp(Model $instance)
     {
-        $cachePrefix = $this->getCachePrefix();
+        $cachePrefix = $this->getCachePrefix($instance->getConnection());
         $modelClassName = get_class($instance);
         $cacheKey = "{$cachePrefix}:{$modelClassName}-cooldown:saved-at";
 
