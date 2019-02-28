@@ -88,7 +88,7 @@ trait ModelCaching
         EloquentBuilder $query,
         int $seconds
     ) : EloquentBuilder {
-        $cachePrefix = $this->getCachePrefix($this->model->getConnection());
+        $cachePrefix = $this->getCachePrefix($this->getConnection());
         $modelClassName = get_class($this);
         $cacheKey = "{$cachePrefix}:{$modelClassName}-cooldown:seconds";
 

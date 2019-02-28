@@ -44,7 +44,7 @@ trait Caching
         [$cacheCooldown] = $this->getModelCacheCooldown($this);
 
         if ($cacheCooldown) {
-            $cachePrefix = $this->getCachePrefix($this->model->getConnection());
+            $cachePrefix = $this->getCachePrefix($this->getConnection());
             $modelClassName = get_class($this);
             $cacheKey = "{$cachePrefix}:{$modelClassName}-cooldown:saved-at";
 
