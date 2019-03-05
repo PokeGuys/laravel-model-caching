@@ -4,6 +4,8 @@ use GeneaLabs\LaravelModelCaching\Traits\CachePrefixing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Expression;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CacheKey
 {
@@ -120,8 +122,6 @@ class CacheKey
         $values = $this->getValuesFromWhere($where);
         $values = $this->getValuesFromBindings($where, $values);
 
-
-
         return "_" . $values;
     }
 
@@ -140,7 +140,7 @@ class CacheKey
         }
 
         if (is_array(array_get($where, "values"))) {
-            return implode("_", $where["values"]);
+            return implode("_", collect($where["values"])->flatten()->toArray());
         }
 
         return array_get($where, "value", "");
@@ -148,7 +148,8 @@ class CacheKey
 
     protected function getValuesFromBindings(array $where, string $values) : string
     {
-        if (! $values && ($this->query->bindings["where"][$this->currentBinding] ?? false)) {
+        // if (! $values && ($this->query->bindings["where"][$this->currentBinding] ?? false)) {
+        if ($this->query->bindings["where"][$this->currentBinding] ?? false) {
             $values = $this->query->bindings["where"][$this->currentBinding];
             $this->currentBinding++;
 
@@ -169,8 +170,7 @@ class CacheKey
                 $value .= $this->getNestedClauses($where);
                 $value .= $this->getColumnClauses($where);
                 $value .= $this->getRawClauses($where);
-                $value .= $this->getInClauses($where);
-                $value .= $this->getNotInClauses($where);
+                $value .= $this->getInAndNotInClauses($where);
                 $value .= $this->getOtherClauses($where, $carry);
 
                 return $value;
@@ -207,16 +207,20 @@ class CacheKey
         return "-{$where["column"]}_in{$values}";
     }
 
-    protected function getNotInClauses(array $where) : string
+    protected function getInAndNotInClauses(array $where) : string
     {
-        if (! in_array($where["type"], ["NotIn"])) {
+        if (! in_array($where["type"], ["In", "NotIn"])) {
             return "";
         }
 
+        $type = strtolower($where["type"]);
+        $subquery = $this->getValuesFromWhere($where);
+        $values = collect($this->query->bindings["where"][$this->currentBinding]);
         $this->currentBinding++;
-        $values = $this->recursiveImplode($where["values"], "_");
+        $subquery = collect(vsprintf(str_replace("?", "%s", $subquery), $values->toArray()));
+        $values = $this->recursiveImplode($subquery->toArray(), "_");
 
-        return "-{$where["column"]}_not_in{$values}";
+        return "-{$where["column"]}_{$type}{$values}";
     }
 
     protected function recursiveImplode(array $items, string $glue = ",") : string
@@ -224,6 +228,19 @@ class CacheKey
         $result = "";
 
         foreach ($items as $value) {
+            if ($value instanceof Expression) {
+                $value = $value->getValue();
+            }
+
+            if (is_string($value)) {
+                $value = str_replace('"', '', $value);
+                $value = explode(" ", $value);
+
+                if (count($value) === 1) {
+                    $value = $value[0];
+                }
+            }
+
             if (is_array($value)) {
                 $result .= $this->recursiveImplode($value, $glue);
 
@@ -291,6 +308,16 @@ class CacheKey
             return "";
         }
 
-        return "-" . implode("-", $eagerLoads->keys()->toArray());
+        return $eagerLoads->keys()->reduce(function ($carry, $related) {
+            if (! method_exists($this->model, $related)) {
+                return "{$carry}-{$related}";
+            }
+
+            $relatedModel = $this->model->$related()->getRelated();
+            $relatedConnection = $relatedModel->getConnection()->getName();
+            $relatedDatabase = $relatedModel->getConnection()->getDatabaseName();
+
+            return "{$carry}-{$relatedConnection}:{$relatedDatabase}:{$related}";
+        });
     }
 }

@@ -63,6 +63,7 @@ class CacheTags
 
     protected function getTagName() : string
     {
-        return $this->getCachePrefix() . str_slug(get_class($this->model));
+        return $this->getCachePrefix()
+            . str_slug(get_class($this->model));
     }
 }
