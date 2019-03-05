@@ -68,7 +68,9 @@ trait Caching
         $idColumn = null,
         string $keyDifferentiator = ''
     ) : string {
-        $builder = $this->applyScopes();
+        if (isset($this->query)) {
+            $builder = $this->applyScopes();
+        }
         
         $eagerLoad = $this->eagerLoad ?? [];
         $model = $this->model ?? $this;
@@ -80,6 +82,9 @@ trait Caching
 
     protected function makeCacheTags() : array
     {
+        if ($this->query instanceof Builder) {
+            $builder = $this->applyScopes();
+        }
         $builder = $this->applyScopes();
         
         $eagerLoad = $this->eagerLoad ?? [];
