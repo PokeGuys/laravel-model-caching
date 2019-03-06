@@ -69,7 +69,8 @@ trait Caching
         string $keyDifferentiator = ''
     ) : string {
         if (isset($this->query)) {
-            $this->query = $this->applyScopes();
+            $builder = $this->applyScopes();
+            $this->query = $builder->query;
         }
         
         $eagerLoad = $this->eagerLoad ?? [];
@@ -83,7 +84,8 @@ trait Caching
     protected function makeCacheTags() : array
     {
         if ($this->query instanceof Builder) {
-            $this->query = $this->applyScopes();
+            $builder = $this->applyScopes();
+            $this->query = $builder->query;
         }
         
         $eagerLoad = $this->eagerLoad ?? [];
